@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: alex-api
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /public/status
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_PATH
+        value: /app/data/alexapi.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: FREE_MONTHLY_LIMIT
+        value: 4000
+      - key: PREMIUM_MONTHLY_LIMIT
+        value: 1000000
+      - key: PAYPAL_BUSINESS_EMAIL
+        value: l29472954@gmail.com
+    disk:
+      name: alex-api-data
+      mountPath: /app/data
+      sizeGB: 1
