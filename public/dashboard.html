@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Alex API</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar"></aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="topbar-toggle btn btn-ghost btn-sm" aria-label="Abrir menú"><i data-lucide="menu"></i></button>
+      <span class="brand"><span class="brand-mark">A</span> Alex API</span>
+      <span></span>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <div>
+          <h1>Resumen</h1>
+          <p class="mt-0" style="margin-bottom:0">Bienvenido de nuevo. Esto es lo que está pasando con tu cuenta.</p>
+        </div>
+        <span class="badge badge-success"><span class="badge-dot"></span> API operativo</span>
+      </div>
+
+      <div class="stat-grid" id="stat-grid">
+        <div class="card stat-card"><div class="skeleton" style="height:70px"></div></div>
+        <div class="card stat-card"><div class="skeleton" style="height:70px"></div></div>
+        <div class="card stat-card"><div class="skeleton" style="height:70px"></div></div>
+        <div class="card stat-card"><div class="skeleton" style="height:70px"></div></div>
+      </div>
+
+      <div class="card card-lg" id="api-keys" style="margin-bottom:24px">
+        <div class="flex justify-between items-center" style="margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <h3 style="margin-bottom:2px">Tus API Keys</h3>
+            <p style="margin-bottom:0;font-size:13.5px">Úsalas en el header <code>x-api-key</code> de cada solicitud.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="new-key-btn"><i data-lucide="plus"></i> Nueva API Key</button>
+        </div>
+        <div id="keys-list" class="flex-col gap-12"></div>
+      </div>
+
+      <div class="card card-lg">
+        <div class="flex justify-between items-center" style="margin-bottom:16px">
+          <h3 style="margin-bottom:0">Historial reciente</h3>
+          <span class="faint" style="font-size:13px">Últimas 20 solicitudes</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="history-table">
+            <thead>
+              <tr><th>Endpoint</th><th>Método</th><th>Estado</th><th>Fecha</th></tr>
+            </thead>
+            <tbody id="history-body"></tbody>
+          </table>
+        </div>
+        <div class="empty-state hidden" id="history-empty">
+          <i data-lucide="inbox"></i>
+          <p style="margin:0">Todavía no has hecho ninguna solicitud a la API.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (requireAuthOrRedirect()) {
+  renderSidebar('overview');
+  loadOverview();
+}
+
+function statCardHTML({ icon, value, label }) {
+  return `
+    <div class="card stat-card fade-up">
+      <div class="stat-card-head"><span class="stat-label">${label}</span><div class="stat-icon"><i data-lucide="${icon}"></i></div></div>
+      <div class="stat-value">${value}</div>
+    </div>`;
+}
+
+async function loadOverview() {
+  try {
+    const { user, apiKey, usage, stats, history } = await AlexAPI.request('/dashboard/overview');
+    AlexAPI.setUser(user);
+    renderSidebar('overview');
+
+    document.getElementById('stat-grid').innerHTML = [
+      statCardHTML({ icon: 'send', value: formatNumber(usage.used), label: 'Solicitudes usadas' }),
+      statCardHTML({ icon: 'battery', value: formatNumber(usage.remaining), label: 'Solicitudes restantes' }),
+      statCardHTML({ icon: 'activity', value: `${stats.successRate}%`, label: 'Tasa de éxito' }),
+      statCardHTML({ icon: 'bar-chart-3', value: formatNumber(stats.totalRequests), label: 'Total histórico' })
+    ].join('') + `
+      <div class="card stat-card" style="grid-column: 1 / -1">
+        <div class="flex justify-between items-center">
+          <span class="stat-label">Consumo del plan ${user.planLabel} (${usage.period})</span>
+          <span class="stat-label">${formatNumber(usage.used)} / ${formatNumber(usage.limit)}</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${Math.min((usage.used / usage.limit) * 100, 100)}%"></div></div>
+      </div>`;
+
+    renderKeys(apiKey ? [apiKey] : []);
+    await loadKeysFull();
+
+    const body = document.getElementById('history-body');
+    if (history.length === 0) {
+      document.getElementById('history-empty').classList.remove('hidden');
+    } else {
+      body.innerHTML = history.map((h) => `
+        <tr>
+          <td class="mono">${h.endpoint}</td>
+          <td><span class="badge">${h.method}</span></td>
+          <td><span class="badge ${h.status_code < 400 ? 'badge-success' : 'badge-danger'}">${h.status_code}</span></td>
+          <td class="faint">${formatDate(h.created_at)}</td>
+        </tr>`).join('');
+    }
+    initIcons();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+function renderKeys(keys) {
+  const list = document.getElementById('keys-list');
+  if (!keys.length) {
+    list.innerHTML = '<p class="faint" style="margin:0">No tienes API Keys todavía.</p>';
+    return;
+  }
+  list.innerHTML = keys.map((k) => `
+    <div class="key-row">
+      <div>
+        <div style="font-weight:600;font-size:14px;margin-bottom:6px">${k.name || 'API Key'} <span class="badge ${k.status === 'active' ? 'badge-success' : 'badge-danger'}" style="margin-left:6px">${k.status}</span></div>
+        <span class="key-value">${maskKey(k.key)}</span>
+      </div>
+      <div class="flex gap-8">
+        <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('${k.key}')"><i data-lucide="copy"></i></button>
+        <button class="btn btn-secondary btn-sm" onclick="regenerateKey(${k.id})"><i data-lucide="refresh-cw"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="deleteKey(${k.id})"><i data-lucide="trash-2"></i></button>
+      </div>
+    </div>`).join('');
+  initIcons();
+}
+
+async function loadKeysFull() {
+  try {
+    const { keys } = await AlexAPI.request('/api-keys');
+    renderKeys(keys);
+  } catch (err) { /* silencioso si falla, ya mostramos la clave principal arriba */ }
+}
+
+document.getElementById('new-key-btn').addEventListener('click', async () => {
+  try {
+    await AlexAPI.request('/api-keys', { method: 'POST', body: { name: 'Nueva API Key' } });
+    toast('API Key creada');
+    loadKeysFull();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+});
+
+async function regenerateKey(id) {
+  if (!confirm('¿Regenerar esta API Key? La clave anterior dejará de funcionar.')) return;
+  try {
+    await AlexAPI.request(`/api-keys/${id}/regenerate`, { method: 'POST' });
+    toast('API Key regenerada');
+    loadKeysFull();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function deleteKey(id) {
+  if (!confirm('¿Eliminar esta API Key de forma permanente?')) return;
+  try {
+    await AlexAPI.request(`/api-keys/${id}`, { method: 'DELETE' });
+    toast('API Key eliminada');
+    loadKeysFull();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+</script>
+</body>
+</html>

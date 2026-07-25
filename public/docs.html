@@ -1,1 +1,209 @@
-.
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documentación — Alex API</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .docs-shell { display: grid; grid-template-columns: 230px 1fr; gap: 32px; padding: 40px 0 80px; align-items: start; }
+  @media (max-width: 900px) { .docs-shell { grid-template-columns: 1fr; } }
+  .docs-nav { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 2px; }
+  .docs-nav a { padding: 9px 12px; border-radius: 8px; font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 10px; }
+  .docs-nav a:hover, .docs-nav a.active { background: var(--surface-2); color: var(--text); }
+  .docs-nav svg { width: 16px; height: 16px; }
+
+  .api-key-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 28px; flex-wrap: wrap; }
+  .api-key-bar input { flex: 1; min-width: 220px; }
+
+  .endpoint-card { margin-bottom: 16px; }
+  .endpoint-head { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .endpoint-path { font-family: var(--font-mono); font-size: 14px; flex: 1; }
+  .endpoint-summary { font-size: 13px; margin: 6px 0 0; }
+  .endpoint-body { display: none; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border-soft); }
+  .endpoint-card.open .endpoint-body { display: block; }
+  .endpoint-card.open .chevron { transform: rotate(180deg); }
+  .chevron { transition: transform 0.2s ease; width: 16px; height: 16px; color: var(--text-faint); }
+
+  .code-block { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; font-family: var(--font-mono); font-size: 12.5px; overflow-x: auto; position: relative; white-space: pre; }
+  .code-copy { position: absolute; top: 8px; right: 8px; }
+
+  .response-box { margin-top: 14px; }
+  .response-box pre { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; font-family: var(--font-mono); font-size: 12.5px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/index.html" class="brand"><span class="brand-mark">A</span> Alex API</a>
+    <div class="nav-links">
+      <a href="/index.html#categorias">Endpoints</a>
+      <a href="/docs.html" class="active">Documentación</a>
+      <a href="/pricing.html">Precios</a>
+      <a href="/dashboard.html" data-auth="in">Dashboard</a>
+    </div>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-ghost btn-sm" data-auth="out">Iniciar sesión</a>
+      <a href="/register.html" class="btn btn-primary btn-sm" data-auth="out">Crear cuenta</a>
+      <a href="/dashboard.html" class="btn btn-primary btn-sm" data-auth="in">Dashboard</a>
+      <button class="nav-toggle" aria-label="Abrir menú"><i data-lucide="menu"></i></button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div style="padding-top:40px;max-width:640px">
+    <h1 style="font-size:32px">Documentación</h1>
+    <p>Todos los endpoints necesitan el header <code>x-api-key</code>. Pega tu clave abajo para probar cualquier endpoint directamente desde esta página.</p>
+  </div>
+
+  <div class="api-key-bar">
+    <input type="text" id="try-key" placeholder="alx_tu_api_key_aqui" class="mono">
+    <button class="btn btn-secondary btn-sm" id="save-key-btn"><i data-lucide="save"></i> Guardar clave</button>
+    <a href="/dashboard.html" class="btn btn-ghost btn-sm">Ver mi API Key →</a>
+  </div>
+
+  <div class="docs-shell">
+    <nav class="docs-nav" id="docs-nav"></nav>
+    <div id="docs-content"></div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <span class="footer-copy">Creado por Luis © 2026</span>
+  </div>
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+const KEY_STORAGE = 'alexapi_try_key';
+document.getElementById('try-key').value = localStorage.getItem(KEY_STORAGE) || '';
+document.getElementById('save-key-btn').addEventListener('click', () => {
+  localStorage.setItem(KEY_STORAGE, document.getElementById('try-key').value.trim());
+  toast('Clave guardada para pruebas en esta página');
+});
+
+function buildCurl(ep) {
+  const base = 'https://tu-dominio.com';
+  let cmd = `curl -X ${ep.method} "${base}${ep.path}${ep.query ? '?' + new URLSearchParams(ep.query).toString() : ''}" \\\n  -H "x-api-key: TU_API_KEY"`;
+  if (ep.body) {
+    cmd += ` \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify(ep.body)}'`;
+  }
+  if (ep.form) {
+    cmd = `curl -X ${ep.method} "${base}${ep.path}${ep.query ? '?' + new URLSearchParams(ep.query).toString() : ''}" \\\n  -H "x-api-key: TU_API_KEY" \\\n  -F "image=@ruta/a/tu/imagen.png"`;
+  }
+  return cmd;
+}
+
+function endpointCardHTML(ep, idx) {
+  const methodClass = ep.method === 'GET' ? 'method-get' : 'method-post';
+  const inputs = [];
+  if (ep.query) {
+    Object.entries(ep.query).forEach(([k, v]) => inputs.push({ kind: 'query', key: k, value: v }));
+  }
+  if (ep.body) {
+    Object.entries(ep.body).forEach(([k, v]) => inputs.push({ kind: 'body', key: k, value: v }));
+  }
+
+  const formFields = inputs.map((inp) => `
+    <div class="field">
+      <label>${inp.key} <span class="faint">(${inp.kind})</span></label>
+      <input type="text" data-kind="${inp.kind}" data-key="${inp.key}" value="${String(inp.value).replace(/"/g, '&quot;')}">
+    </div>`).join('');
+
+  return `
+    <div class="card endpoint-card" id="ep-${idx}">
+      <div class="endpoint-head" onclick="toggleEndpoint(${idx})">
+        <span class="method ${methodClass}">${ep.method}</span>
+        <span class="endpoint-path">${ep.path}</span>
+        <i data-lucide="chevron-down" class="chevron"></i>
+      </div>
+      <p class="endpoint-summary">${ep.summary}</p>
+      <div class="endpoint-body">
+        <div class="code-block">${buildCurl(ep)}<button class="btn btn-secondary btn-sm code-copy" onclick='copyToClipboard(${JSON.stringify(buildCurl(ep))})'><i data-lucide="copy" style="width:14px;height:14px"></i></button></div>
+
+        ${ep.form ? '<p class="faint" style="margin-top:14px;font-size:13px">Este endpoint recibe un archivo de imagen (multipart/form-data). Pruébalo con curl usando el comando de arriba.</p>' : `
+        <div style="margin-top:16px">
+          ${formFields}
+          <button class="btn btn-primary btn-sm" onclick="runEndpoint(${idx})"><i data-lucide="play"></i> Probar endpoint</button>
+          <div class="response-box hidden" id="response-${idx}"><pre></pre></div>
+        </div>`}
+      </div>
+    </div>`;
+}
+
+function toggleEndpoint(idx) {
+  document.getElementById(`ep-${idx}`).classList.toggle('open');
+  initIcons();
+}
+
+let ALL_ENDPOINTS = [];
+
+async function runEndpoint(idx) {
+  const ep = ALL_ENDPOINTS[idx];
+  const key = localStorage.getItem(KEY_STORAGE);
+  if (!key) { toast('Guarda tu API Key arriba antes de probar un endpoint', 'error'); return; }
+
+  const card = document.getElementById(`ep-${idx}`);
+  const query = {};
+  const body = {};
+  card.querySelectorAll('[data-kind]').forEach((input) => {
+    if (input.dataset.kind === 'query') query[input.dataset.key] = input.value;
+    else body[input.dataset.key] = input.value;
+  });
+
+  const qs = Object.keys(query).length ? '?' + new URLSearchParams(query).toString() : '';
+  const responseBox = document.getElementById(`response-${idx}`);
+  responseBox.classList.remove('hidden');
+  responseBox.querySelector('pre').textContent = 'Cargando…';
+
+  try {
+    const res = await fetch(`${ep.path}${qs}`, {
+      method: ep.method,
+      headers: { 'x-api-key': key, ...(ep.method !== 'GET' ? { 'Content-Type': 'application/json' } : {}) },
+      body: ep.method !== 'GET' ? JSON.stringify(body) : undefined
+    });
+    const data = await res.json();
+    responseBox.querySelector('pre').textContent = `HTTP ${res.status}\n${JSON.stringify(data, null, 2)}`;
+  } catch (err) {
+    responseBox.querySelector('pre').textContent = `Error: ${err.message}`;
+  }
+}
+
+async function loadDocs() {
+  try {
+    const { categories } = await AlexAPI.request('/docs-data', { auth: false });
+    ALL_ENDPOINTS = [];
+    let flatIdx = 0;
+
+    document.getElementById('docs-nav').innerHTML = categories.map((cat) => `<a href="#${cat.id}"><i data-lucide="${cat.icon}"></i> ${cat.label}</a>`).join('');
+
+    document.getElementById('docs-content').innerHTML = categories.map((cat) => {
+      const cards = cat.endpoints.map((ep) => {
+        ALL_ENDPOINTS.push(ep);
+        const html = endpointCardHTML(ep, flatIdx);
+        flatIdx += 1;
+        return html;
+      }).join('');
+      return `
+        <section id="${cat.id}" style="margin-bottom:44px">
+          <h2 style="font-size:20px">${cat.label}</h2>
+          <p style="margin-bottom:20px">${cat.description}</p>
+          ${cards}
+        </section>`;
+    }).join('');
+
+    initIcons();
+  } catch (err) {
+    document.getElementById('docs-content').innerHTML = '<p>No se pudo cargar la documentación.</p>';
+  }
+}
+
+loadDocs();
+</script>
+</body>
+</html>

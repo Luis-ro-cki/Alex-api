@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alex API — APIs rápidas, gratuitas y listas para producción</title>
+<meta name="description" content="Alex API es una plataforma de APIs gratuitas y premium: IA, herramientas, texto, imágenes y más. Dashboard, API Keys y documentación interactiva.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .hero { padding: 88px 0 60px; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
+  @media (max-width: 960px) { .hero-grid { grid-template-columns: 1fr; } }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--accent-cyan); background: rgba(34,211,238,0.08); border: 1px solid rgba(34,211,238,0.25); padding: 6px 12px; border-radius: 999px; margin-bottom: 20px; }
+  .hero h1 { font-size: clamp(34px, 5vw, 54px); }
+  .hero-actions { display: flex; gap: 14px; margin-top: 28px; flex-wrap: wrap; }
+  .hero-stats { display: flex; gap: 32px; margin-top: 40px; flex-wrap: wrap; }
+  .hero-stat b { font-family: var(--font-display); font-size: 22px; display: block; }
+  .hero-stat span { font-size: 13px; color: var(--text-faint); }
+
+  /* Consola en vivo (elemento firma) */
+  .console { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-glow); }
+  .console-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-soft); }
+  .console-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .console-body { padding: 20px; font-family: var(--font-mono); font-size: 13px; min-height: 260px; }
+  .console-line { margin-bottom: 6px; white-space: pre-wrap; word-break: break-word; }
+  .console-prompt { color: var(--accent-cyan); }
+  .console-response { color: var(--text-muted); }
+  .console-key { color: #C4B5FD; }
+  .console-cursor { display: inline-block; width: 7px; height: 14px; background: var(--accent-cyan); animation: blink 1s step-end infinite; vertical-align: middle; margin-left: 2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .section { padding: 64px 0; }
+  .section-head { max-width: 640px; margin-bottom: 40px; }
+  .section-head .eyebrow { margin-bottom: 14px; }
+
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 860px) { .feature-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .feature-grid { grid-template-columns: 1fr; } }
+  .feature-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: var(--accent-cyan); }
+  .feature-icon svg { width: 20px; height: 20px; }
+
+  .cat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; }
+  @media (max-width: 1000px) { .cat-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 640px) { .cat-grid { grid-template-columns: 1fr 1fr; } }
+  .cat-card { text-align: left; }
+  .cat-card .feature-icon { background: var(--accent-gradient); color: #0A0D14; }
+  .cat-card ul { list-style: none; padding: 0; margin: 12px 0 0; }
+  .cat-card li { font-family: var(--font-mono); font-size: 12.5px; color: var(--text-faint); padding: 3px 0; }
+
+  .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 860px; }
+  @media (max-width: 760px) { .pricing-grid { grid-template-columns: 1fr; } }
+  .plan-card { position: relative; }
+  .plan-card.premium { border-color: rgba(124, 92, 255, 0.5); background: linear-gradient(180deg, rgba(124,92,255,0.06), transparent 40%), var(--surface); }
+  .plan-price { font-family: var(--font-display); font-size: 40px; margin: 6px 0 18px; }
+  .plan-price span { font-size: 15px; color: var(--text-faint); font-family: var(--font-body); }
+  .plan-list { list-style: none; padding: 0; margin: 20px 0 26px; display: flex; flex-direction: column; gap: 11px; }
+  .plan-list li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-muted); }
+  .plan-list svg { width: 16px; height: 16px; color: var(--success); flex-shrink: 0; }
+  .plan-tag { position: absolute; top: -12px; right: 24px; background: var(--accent-gradient); color: #0A0D14; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; }
+
+  .cta-band { background: radial-gradient(600px 260px at 50% 0%, rgba(124,92,255,0.18), transparent 70%), var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 56px 32px; text-align: center; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/index.html" class="brand"><span class="brand-mark">A</span> Alex API</a>
+    <div class="nav-links">
+      <a href="/index.html#categorias">Endpoints</a>
+      <a href="/docs.html">Documentación</a>
+      <a href="/pricing.html">Precios</a>
+      <a href="/dashboard.html" data-auth="in">Dashboard</a>
+    </div>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-ghost btn-sm" data-auth="out">Iniciar sesión</a>
+      <a href="/register.html" class="btn btn-primary btn-sm" data-auth="out">Crear cuenta</a>
+      <a href="/dashboard.html" class="btn btn-primary btn-sm" data-auth="in">Ir al dashboard</a>
+      <button class="nav-toggle" aria-label="Abrir menú"><i data-lucide="menu"></i></button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container hero-grid">
+    <div class="fade-up">
+      <span class="eyebrow"><i data-lucide="zap" style="width:14px;height:14px"></i> API status: <span id="hero-status">verificando…</span></span>
+      <h1>APIs gratuitas, rápidas y listas para producción.</h1>
+      <p style="font-size:17px;max-width:480px">Alex API reúne IA, herramientas, texto, imágenes y utilidades de sistema en un solo lugar, con documentación interactiva, dashboard en tiempo real y planes que crecen contigo.</p>
+      <div class="hero-actions">
+        <a href="/register.html" class="btn btn-primary">Crear API Key gratis <i data-lucide="arrow-right" style="width:16px;height:16px"></i></a>
+        <a href="/docs.html" class="btn btn-secondary">Ver documentación</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><b id="stat-users">—</b><span>Usuarios registrados</span></div>
+        <div class="hero-stat"><b id="stat-requests">—</b><span>Solicitudes procesadas</span></div>
+        <div class="hero-stat"><b>4,000</b><span>Gratis cada mes</span></div>
+      </div>
+    </div>
+
+    <div class="console fade-up delay-2">
+      <div class="console-bar">
+        <span class="console-dot" style="background:#F87171"></span>
+        <span class="console-dot" style="background:#FBBF24"></span>
+        <span class="console-dot" style="background:#34D399"></span>
+        <span class="mono" style="margin-left:8px;font-size:12px;color:var(--text-faint)">consola — alexapi.dev</span>
+      </div>
+      <div class="console-body" id="console-body"></div>
+    </div>
+  </div>
+</header>
+
+<section class="section" id="funciones">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Plataforma</span>
+      <h2>Todo lo que necesitas para construir con APIs</h2>
+      <p>Sin configuraciones complicadas: crea tu cuenta, genera tu API Key y empieza a hacer solicitudes en minutos.</p>
+    </div>
+    <div class="feature-grid">
+      <div class="card card-hover fade-up">
+        <div class="feature-icon"><i data-lucide="key-round"></i></div>
+        <h3 style="font-size:17px">API Keys al instante</h3>
+        <p style="font-size:14px">Crea, regenera y elimina tus claves desde el dashboard. Controla el estado y el consumo de cada una.</p>
+      </div>
+      <div class="card card-hover fade-up delay-1">
+        <div class="feature-icon"><i data-lucide="gauge"></i></div>
+        <h3 style="font-size:17px">Dashboard en tiempo real</h3>
+        <p style="font-size:14px">Solicitudes usadas, restantes, historial y estadísticas de tu cuenta, siempre actualizados.</p>
+      </div>
+      <div class="card card-hover fade-up delay-2">
+        <div class="feature-icon"><i data-lucide="book-open"></i></div>
+        <h3 style="font-size:17px">Documentación interactiva</h3>
+        <p style="font-size:14px">Copia el endpoint, revisa ejemplos y pruébalo directamente desde el navegador.</p>
+      </div>
+      <div class="card card-hover fade-up">
+        <div class="feature-icon"><i data-lucide="shield-check"></i></div>
+        <h3 style="font-size:17px">Seguridad real</h3>
+        <p style="font-size:14px">JWT, contraseñas encriptadas, límite de solicitudes y protección contra abuso desde el primer día.</p>
+      </div>
+      <div class="card card-hover fade-up delay-1">
+        <div class="feature-icon"><i data-lucide="layers"></i></div>
+        <h3 style="font-size:17px">Decenas de endpoints</h3>
+        <p style="font-size:14px">IA, herramientas, texto, imágenes y sistema — y una estructura lista para sumar cientos más.</p>
+      </div>
+      <div class="card card-hover fade-up delay-2">
+        <div class="feature-icon"><i data-lucide="crown"></i></div>
+        <h3 style="font-size:17px">Plan Premium</h3>
+        <p style="font-size:14px">Solicitudes prácticamente ilimitadas, mayor velocidad y soporte prioritario.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="categorias">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Endpoints</span>
+      <h2>Explora las categorías disponibles</h2>
+      <p>Cada categoría agrupa endpoints listos para usar. La documentación completa incluye ejemplos y un probador en vivo.</p>
+    </div>
+    <div class="cat-grid" id="category-grid"></div>
+  </div>
+</section>
+
+<section class="section" id="planes">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Precios</span>
+      <h2>Un plan gratuito de verdad, y Premium cuando lo necesites</h2>
+    </div>
+    <div class="pricing-grid">
+      <div class="card card-lg plan-card">
+        <span class="badge">🆓 Free</span>
+        <div class="plan-price">$0 <span>/ mes</span></div>
+        <ul class="plan-list">
+          <li><i data-lucide="check"></i> 4,000 solicitudes al mes</li>
+          <li><i data-lucide="check"></i> Acceso a la mayoría de endpoints</li>
+          <li><i data-lucide="check"></i> API Key gratuita</li>
+          <li><i data-lucide="check"></i> Documentación completa</li>
+          <li><i data-lucide="check"></i> Soporte básico</li>
+        </ul>
+        <a href="/register.html" class="btn btn-secondary btn-block">Empezar gratis</a>
+      </div>
+      <div class="card card-lg plan-card premium">
+        <span class="plan-tag">Recomendado</span>
+        <span class="badge badge-violet">👑 Premium</span>
+        <div class="plan-price">A tu medida</div>
+        <ul class="plan-list">
+          <li><i data-lucide="check"></i> Solicitudes prácticamente ilimitadas</li>
+          <li><i data-lucide="check"></i> Acceso a todos los endpoints</li>
+          <li><i data-lucide="check"></i> Mayor velocidad de respuesta</li>
+          <li><i data-lucide="check"></i> Soporte prioritario</li>
+          <li><i data-lucide="check"></i> Acceso anticipado a nuevas funciones</li>
+        </ul>
+        <a href="/pricing.html" class="btn btn-primary btn-block">Comprar Premium con PayPal</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta-band">
+      <h2 style="font-size:28px">Crea tu cuenta y obtén tu primera API Key en menos de un minuto</h2>
+      <p style="max-width:480px;margin:0 auto 24px">Sin tarjeta de crédito. Sin configuraciones complicadas.</p>
+      <a href="/register.html" class="btn btn-primary">Crear cuenta gratis</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <span class="footer-copy">Creado por Luis © 2026</span>
+    <div class="footer-links">
+      <a href="/docs.html">Documentación</a>
+      <a href="/pricing.html">Precios</a>
+      <a href="/register.html">Crear cuenta</a>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+async function loadStatus() {
+  const el = document.getElementById('hero-status');
+  try {
+    const res = await fetch('/public/status');
+    const data = await res.json();
+    el.textContent = data.status === 'operativo' ? 'operativo' : data.status;
+    el.style.color = 'var(--success)';
+  } catch (e) {
+    el.textContent = 'sin conexión';
+  }
+}
+
+async function loadGlobalStats() {
+  try {
+    // Las estadisticas globales viven detras de /api/system/stats (requiere API key),
+    // asi que en la landing mostramos un resumen aproximado vía /public si esta disponible.
+    const res = await fetch('/public/status');
+    await res.json();
+  } catch (e) { /* silencioso */ }
+}
+
+function typeConsole() {
+  const body = document.getElementById('console-body');
+  const script = [
+    { type: 'prompt', text: '$ curl https://alexapi.dev/api/tools/uuid \\' },
+    { type: 'prompt', text: '  -H "x-api-key: ' , key: 'alx_••••••••••••3f2a"' },
+    { type: 'response', text: '{ "success": true, "result": "3f2a9c1e-8b7d-4a2f-9e11-2b6d7c4a1f90" }' },
+    { type: 'prompt', text: '$ curl https://alexapi.dev/api/text/uppercase \\' },
+    { type: 'prompt', text: '  -d \'{"text":"hola alex api"}\'' },
+    { type: 'response', text: '{ "success": true, "result": "HOLA ALEX API" }' }
+  ];
+  let i = 0;
+  function next() {
+    if (i >= script.length) { body.insertAdjacentHTML('beforeend', '<span class="console-cursor"></span>'); return; }
+    const item = script[i];
+    const line = document.createElement('div');
+    line.className = `console-line ${item.type === 'prompt' ? 'console-prompt' : 'console-response'}`;
+    line.textContent = item.text;
+    if (item.key) {
+      const keySpan = document.createElement('span');
+      keySpan.className = 'console-key';
+      keySpan.textContent = item.key;
+      line.appendChild(keySpan);
+    }
+    body.appendChild(line);
+    i += 1;
+    setTimeout(next, item.type === 'prompt' ? 420 : 650);
+  }
+  next();
+}
+
+function renderCategories(categories) {
+  const grid = document.getElementById('category-grid');
+  grid.innerHTML = categories.map((cat) => `
+    <div class="card cat-card fade-up">
+      <div class="feature-icon"><i data-lucide="${cat.icon}"></i></div>
+      <h3 style="font-size:15.5px">${cat.label}</h3>
+      <p style="font-size:13px;margin-bottom:0">${cat.description}</p>
+      <ul>${cat.endpoints.slice(0, 4).map((e) => `<li>${e.path}</li>`).join('')}</ul>
+    </div>
+  `).join('');
+  initIcons();
+}
+
+async function loadCategories() {
+  try {
+    const res = await fetch('/docs-data');
+    const data = await res.json();
+    renderCategories(data.categories);
+  } catch (e) {
+    document.getElementById('category-grid').innerHTML = '<p>No se pudieron cargar las categorías.</p>';
+  }
+}
+
+loadStatus();
+loadCategories();
+typeConsole();
+</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi perfil — Alex API</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar"></aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="topbar-toggle btn btn-ghost btn-sm" aria-label="Abrir menú"><i data-lucide="menu"></i></button>
+      <span class="brand"><span class="brand-mark">A</span> Alex API</span>
+      <span></span>
+    </div>
+
+    <div class="content" style="max-width:680px">
+      <div class="page-head"><h1>Mi perfil</h1></div>
+
+      <div class="card card-lg" style="margin-bottom:24px">
+        <h3>Información personal</h3>
+        <form id="profile-form">
+          <div class="field">
+            <label for="name">Nombre</label>
+            <input type="text" id="name" required>
+          </div>
+          <div class="field">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" required>
+          </div>
+          <div class="field">
+            <label>Plan actual</label>
+            <div id="plan-badge"></div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="profile-btn">Guardar cambios</button>
+        </form>
+      </div>
+
+      <div class="card card-lg">
+        <h3>Cambiar contraseña</h3>
+        <form id="password-form">
+          <div class="field">
+            <label for="current-password">Contraseña actual</label>
+            <input type="password" id="current-password" required>
+          </div>
+          <div class="field">
+            <label for="new-password">Nueva contraseña</label>
+            <input type="password" id="new-password" required minlength="8">
+            <div class="field-hint">Mínimo 8 caracteres, con letras y números.</div>
+          </div>
+          <button type="submit" class="btn btn-secondary" id="password-btn">Actualizar contraseña</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+if (requireAuthOrRedirect()) {
+  renderSidebar('profile');
+  loadProfile();
+}
+
+async function loadProfile() {
+  try {
+    const { user } = await AlexAPI.request('/user/profile');
+    AlexAPI.setUser(user);
+    renderSidebar('profile');
+    document.getElementById('name').value = user.name;
+    document.getElementById('email').value = user.email;
+    document.getElementById('plan-badge').innerHTML = `<span class="badge ${user.plan === 'premium' ? 'badge-violet' : ''}">${user.plan === 'premium' ? '👑 Premium' : '🆓 Free'}</span>`;
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+document.getElementById('profile-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('profile-btn');
+  btn.disabled = true;
+  try {
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const { user } = await AlexAPI.request('/user/profile', { method: 'PUT', body: { name, email } });
+    AlexAPI.setUser(user);
+    renderSidebar('profile');
+    toast('Perfil actualizado');
+  } catch (err) {
+    toast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('password-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('password-btn');
+  btn.disabled = true;
+  try {
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const data = await AlexAPI.request('/user/password', { method: 'PUT', body: { currentPassword, newPassword } });
+    toast(data.message);
+    document.getElementById('password-form').reset();
+  } catch (err) {
+    toast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
